@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # sys2 - Support Tool Server
+  sys2:
+    image: python:3.11-slim
+    container_name: sys2
+    hostname: support-tool
+    command: sh -c "pip install flask && python /app/server.py"
+    volumes:
+      - ./scripts/server.py:/app/server.py
+    networks:
+      monitor-net:
+        ipv4_address: 192.168.10.20
+
+  # sys1 - Health Check Client
+  sys1:
+    image: python:3.11-slim
+    container_name: sys1
+    command: sh -c "pip install requests && python /app/health_check.py"
+    volumes:
+      - ./scripts:/app
+    environment:
+      SERVER_HOST: support-tool
+      CONNECTION_TIMEOUT: 1.5
+    networks:
+      monitor-net:
+        ipv4_address: 192.168.10.10
+
+  # Monitor Device (DHCP)
+  monitor:
+    image: alpine:latest
+    container_name: monitor
+    command: sleep infinity
+    networks:
+      monitor-net:
+        ipv4_address: 192.168.10.30
+
+networks:
+  monitor-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
